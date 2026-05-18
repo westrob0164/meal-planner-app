@@ -5,6 +5,8 @@
  *          and isolates structural event triggers.
  **/
 
+import cardBuilder from './components/cardBuilder.js';
+
 // 1. PROJECT CONFIGURATION
 // ALWAYS change this prefix when starting a new project to isolate LocalStorage variables
 window.APP_CONFIG = {
@@ -75,6 +77,9 @@ function setupEventListeners() {
  * Clean, untainted execution entry point for your application logic
  */
 function startProjectUI() {
+    cardBuilder("#app", { id: "p101", name: "Build App Grid Layout", dateToken: "DATE_20260518" });
+
+
     console.log("✅ Application Clean Starter Init.");
     console.log("Active Dataset Scope:", window.DATA);
 

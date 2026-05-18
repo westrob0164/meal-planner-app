@@ -1,1 +1,0 @@
-need to setup this template to add a header footer  and  settings link for updateing the database

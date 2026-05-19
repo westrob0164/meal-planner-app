@@ -1,18 +1,8 @@
-/**
- * Project: Project Name
- * File:    styles.css
- * Author:  Rob West
- * Created: 2026-05-05
- **/
+@import "components/appFrame.css";
 
-/* 1. Reset and Foundation */
-@import url('base.css');
+@import "components/scheduleView.css";
 
-/* 2. The Skeleton (3-Column Grid) */
-@import url('layout.css');
+@import "components/prepView.css";
 
-/* 3. Reusable Components */
-@import url('buttons.css');
 
-/* 4. Page-Specific Tweaks */
-@import url('dashboard.css');
+@import "components/shoppingListView.css";

@@ -1,20 +1,25 @@
 /**
- * Project: [PROJECT NAME]
+ * Project: Heart-Healthy Meal Planner
  * File:    main.js
  * Desc:    The "Conductor" script. Manages project config, data hydration,
  *          and isolates structural event triggers.
  **/
 
-import cardBuilder from './components/cardBuilder.js';
+import { appFrame } from "./components/appFrame.js";
+import { scheduleView } from "./components/scheduleView.js";
+import { shoppingListView } from "./components/shoppingListView.js"; // <--- Add this import
+
+
 
 // 1. PROJECT CONFIGURATION
-// ALWAYS change this prefix when starting a new project to isolate LocalStorage variables
-window.APP_CONFIG = {
-    prefix: "TEMPLATE_V1" 
+// Isolated application prefix managed out of global utilities/config.js layer
+// Initial fallback values provided here for architectural structural safety
+window.APP_CONFIG = window.APP_CONFIG || {
+    prefix: "HEART_MEAL_PLANNER_V1_" 
 };
 
 // 2. GLOBAL DATA STORE
-window.DATA = {};
+window.DATA = window.DATA || {};
 
 $(document).ready(function() {
     console.clear();
@@ -77,12 +82,16 @@ function setupEventListeners() {
  * Clean, untainted execution entry point for your application logic
  */
 function startProjectUI() {
-    cardBuilder("#app", { id: "p101", name: "Build App Grid Layout", dateToken: "DATE_20260518" });
-
-
-    console.log("✅ Application Clean Starter Init.");
-    console.log("Active Dataset Scope:", window.DATA);
-
-    // --- YOUR CODE STARTS HERE ---
+    // Execute base interface skeleton deployment
+    appFrame();
     
+    // Execute 14-day layout template card construction matrix
+    scheduleView();
+
+    // Compile and build interactive phone-friendly grocery item rows
+    shoppingListView();
+
+
+    
+    console.log("Meal app framework and schedule matrix deployed successfully.");
 }

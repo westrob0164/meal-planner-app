@@ -57,7 +57,7 @@ export function viewToggle() {
     }
   });
 
-  // 🚀 NEW PHASE 2 TRIGGER: Local Disk Serialization Button
+  // 🚀 FIXED PHASE 2 TRIGGER: Local Disk Serialization Button
   dom.create("desktop-sync-btn", toggleContainer, {
     tag: "button",
     text: "💾 Extract & Save Plan to Disk",
@@ -67,15 +67,21 @@ export function viewToggle() {
       click: function() {
         // Dynamically import your logic module on demand to save memory
         import("../logic/exportState.js").then((module) => {
-          module.exportState().then(() => {
+          
+          // 🚀 FIXED JQUERY PROMISE SYNTAX: Swapped .catch() for .fail()
+          module.exportState()
+            .then(() => {
               alert("✅ Local extraction complete! meal_state.json updated on your computer.");
-          }).catch(() => {
+            })
+            .fail(() => {
               alert("❌ Extraction writing error. Review local server developer logs.");
-          });
+            });
+
         });
       }
     }
   });
+
 
 
 }

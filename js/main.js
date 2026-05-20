@@ -9,6 +9,7 @@ import { appFrame } from "./components/appFrame.js";
 import { scheduleView } from "./components/scheduleView.js";
 import { shoppingListView } from "./components/shoppingListView.js"; // <--- Add this import
 import { pillboxView } from "./components/pillboxView.js";
+import { viewToggle } from "./components/viewToggle.js";
 
 
 
@@ -85,6 +86,8 @@ function setupEventListeners() {
 function startProjectUI() {
     // 1. Deploy layout framework shell columns
     appFrame();
+
+    viewToggle(); // <--- Injects your view mode controller layout button
     
     // 2. Deploy draggable inventory sidebar matching static configs
     pillboxView();

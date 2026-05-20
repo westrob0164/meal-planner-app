@@ -59,4 +59,4 @@ class DateObject {
 }
 
 window.DateObject = DateObject;
-export default DateObject;
+// 4default DateObject;

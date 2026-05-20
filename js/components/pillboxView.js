@@ -1,7 +1,7 @@
 /**
  * js/components/pillboxView.js
  * Generates the master sidebar list of available heart-healthy meal pills.
- * Handles persistent custom meal creation and forces type-sorted organization.
+ * Handles type-sorted organization, creation, and deletion of custom items.
  * Exports exactly one function matching the filename.
  */
 export function pillboxView() {
@@ -67,8 +67,7 @@ export function pillboxView() {
   window.DATA.customMeals = window.DATA.customMeals || {};
   const combinedMeals = { ...staticMeals, ...window.DATA.customMeals };
 
-  // 4. 🚀 TYPE-SORTING ENGINE PIPELINE
-  // Sorts arrays so elements organize by category group instead of insertion order
+  // 4. TYPE-SORTING ENGINE PIPELINE
   const typeOrder = { "breakfast": 1, "main": 2, "light": 3 };
   
   const sortedMealsArray = Object.values(combinedMeals).sort((mealA, mealB) => {
@@ -77,16 +76,42 @@ export function pillboxView() {
     return orderA - orderB;
   });
 
-  // 5. Loop through the newly SORTED array to generate your draggable list elements
+  // 5. Loop through the SORTED array to generate your draggable list elements
   sortedMealsArray.forEach((meal) => {
     if (meal.id === "sun_main" || meal.id === "external_evening") return;
 
-    const itemPill = dom.create("inventory-meal-pill", listWrapper, {
+    // Use a wrapper row container so we can separate the text from the delete action button
+    const rowContainer = dom.create("inventory-row-wrapper", listWrapper);
+
+    const itemPill = dom.create("inventory-meal-pill", rowContainer, {
       text: meal.name,
       data: { id: meal.id, type: meal.type }
     });
 
     itemPill.addClass(`type-${meal.type.toLowerCase()}`);
+
+    // 🚀 NEW PHASE 2 TRIGGER: Render interactive delete button only for custom entries
+    if (meal.id.startsWith("custom_")) {
+      dom.create("inventory-delete-btn", rowContainer, {
+        tag: "button",
+        text: "×",
+        attr: { type: "button", "aria-label": `Delete ${meal.name}` },
+        on: {
+          click: function(e) {
+            e.stopPropagation(); // Stops the element from triggering an accidental drag start sequence
+            
+            if (confirm(`Are you sure you want to completely remove "${meal.name}" from your inventory?`)) {
+              // Delete the unique ID property key directly from your mirrored window.DATA store
+              delete window.DATA.customMeals[meal.id];
+              console.log(`Permanently scrubbed "${meal.id}" from data tracking layer.`);
+              
+              // Refresh both components to update inventory and empty out any assigned slots
+              pillboxView();
+            }
+          }
+        }
+      });
+    }
   });
 
   // 6. Activate jQuery-UI cloning engine

@@ -3,7 +3,7 @@
  * Generates a desktop/mobile layout toggle button and displays meta debugging info.
  * Exports exactly one function matching the filename.
  */
-import { scheduleView } from "./scheduleView.js";
+import { scheduleView } from "./scheduleView.js"
 
 export function viewToggle() {
   const targetSelector = "#app-header";

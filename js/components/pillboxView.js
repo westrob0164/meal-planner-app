@@ -1,41 +1,88 @@
 /**
  * js/components/pillboxView.js
  * Generates the master sidebar list of available heart-healthy meal pills.
- * Configures jQuery-UI clone-dragging capabilities.
+ * Handles custom meal creation and configures jQuery-UI clone-dragging.
  * Exports exactly one function matching the filename.
  */
 export function pillboxView() {
   const targetSelector = "#meal-pillbox-view";
   const mealsLibrary = window.APP_CONFIG.MEALS;
 
-  // Clear previous rendering and set header
+  // 1. Clear previous rendering and build framework
   $(targetSelector).empty();
   dom.create("pillbox-header", targetSelector, { tag: "h3", text: "🍉 Master Meal Inventory" });
-  dom.create("pillbox-instruction", targetSelector, { tag: "p", text: "Drag a meal pill and drop it onto a calendar slot to change your plan.", style: "font-size:12px; color:#64748b; margin-bottom:15px;" });
+  
+  // 2. NEW: Add Custom Meal Creation Input Fields
+  const formBox = dom.create("pillbox-add-form", targetSelector);
+  
+  const nameInput = dom.create("pillbox-input", formBox, {
+    tag: "input",
+    attr: { type: "text", placeholder: "New meal name (e.g., Baked Salmon)..." }
+  });
+
+  const typeSelect = dom.create("pillbox-select", formBox, {
+    tag: "select"
+  });
+  dom.create("opt", typeSelect, { tag: "option", attr: { value: "Breakfast" }, text: "Breakfast" });
+  dom.create("opt", typeSelect, { tag: "option", attr: { value: "Main" }, text: "Noon Meal" });
+  dom.create("opt", typeSelect, { tag: "option", attr: { value: "Light" }, text: "Evening Meal" });
+
+  dom.create("pillbox-btn", formBox, {
+    tag: "button",
+    text: "Add to Inventory",
+    attr: { type: "button" },
+    on: {
+      click: function() {
+        const name = nameInput.val().trim();
+        const type = typeSelect.val();
+        if (name === "") return;
+
+        // Generate a clean, unique ID safely string-formatted
+        const newId = "custom_" + Date.now();
+
+        // Inject new definition straight into your active configuration library dictionary
+        window.APP_CONFIG.MEALS[newId] = {
+          id: newId,
+          name: name,
+          type: type,
+          ingredients: [name] // Uses its own name as fallback ingredient entry tag
+        };
+
+        console.log(`Custom inventory item registered: "${name}" (${type})`);
+        
+        // Re-render inventory to display the new draggable pill instantly
+        pillboxView();
+      }
+    }
+  });
+
+  dom.create("pillbox-instruction", targetSelector, { 
+    tag: "p", 
+    text: "Drag a meal pill and drop it onto a matching calendar slot.", 
+    style: "font-size:12px; color:#64748b; margin: 15px 0 10px 0;" 
+  });
 
   const listWrapper = dom.create("pillbox-items-container", targetSelector);
 
-  // Loop through your configuration dictionary to generate the inventory
+  // 3. Loop through your dictionary to generate the inventory draggable list
   Object.values(mealsLibrary).forEach((meal) => {
-    // Skip dynamic or family meals that shouldn't be copied around randomly
-    if (meal.isExternal) return;
+    // Only block Sunday dinner warning elements, allow breakfasts/evenings
+    if (meal.id === "sun_main" || meal.id === "external_evening") return;
 
-    // Build the master inventory item card
     const itemPill = dom.create("inventory-meal-pill", listWrapper, {
       text: meal.name,
-      data: { id: meal.id, type: meal.type } // Store metadata for dropping
+      data: { id: meal.id, type: meal.type }
     });
 
-    // Color treat based on meal classification type
     itemPill.addClass(`type-${meal.type.toLowerCase()}`);
   });
 
-  // 🚀 ACTIVATE JQUERY-UI DRAGGABLE WITH CLONING
+  // 4. Activate jQuery-UI cloning engine
   $(targetSelector).find(".inventory-meal-pill").draggable({
-    helper: "clone",       // Creates a copy of the pill while dragging instead of moving original
+    helper: "clone",
     opacity: 0.85,
     cursor: "move",
-    revert: "invalid",     // Snaps pill back home if missed or dropped outside a valid day slot
+    revert: "invalid",
     start: function() {
       $(this).css("z-index", 1000);
     }

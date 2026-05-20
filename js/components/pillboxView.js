@@ -1,18 +1,18 @@
 /**
  * js/components/pillboxView.js
  * Generates the master sidebar list of available heart-healthy meal pills.
- * Handles custom meal creation and configures jQuery-UI clone-dragging.
+ * Handles persistent custom meal creation via window.DATA storage mirroring.
  * Exports exactly one function matching the filename.
  */
 export function pillboxView() {
   const targetSelector = "#meal-pillbox-view";
-  const mealsLibrary = window.APP_CONFIG.MEALS;
+  const staticMeals = window.APP_CONFIG.MEALS;
 
   // 1. Clear previous rendering and build framework
   $(targetSelector).empty();
   dom.create("pillbox-header", targetSelector, { tag: "h3", text: "🍉 Master Meal Inventory" });
   
-  // 2. NEW: Add Custom Meal Creation Input Fields
+  // 2. Add Custom Meal Creation Input Fields
   const formBox = dom.create("pillbox-add-form", targetSelector);
   
   const nameInput = dom.create("pillbox-input", formBox, {
@@ -37,20 +37,21 @@ export function pillboxView() {
         const type = typeSelect.val();
         if (name === "") return;
 
-        // Generate a clean, unique ID safely string-formatted
         const newId = "custom_" + Date.now();
 
-        // Inject new definition straight into your active configuration library dictionary
-        window.APP_CONFIG.MEALS[newId] = {
+        // 🚀 STATE MIRRORING FIX: Initialize and save straight to window.DATA layer
+        window.DATA.customMeals = window.DATA.customMeals || {};
+        window.DATA.customMeals[newId] = {
           id: newId,
           name: name,
           type: type,
-          ingredients: [name] // Uses its own name as fallback ingredient entry tag
+          ingredients: [name] // Self-populates ingredient pill array cleanly
         };
 
-        console.log(`Custom inventory item registered: "${name}" (${type})`);
+        console.log(`Custom item permanently registered to memory store: "${name}" (${type})`);
         
-        // Re-render inventory to display the new draggable pill instantly
+        // Clear text field and instantly refresh the inventory view column
+        nameInput.val("");
         pillboxView();
       }
     }
@@ -64,20 +65,23 @@ export function pillboxView() {
 
   const listWrapper = dom.create("pillbox-items-container", targetSelector);
 
-  // 3. Loop through your dictionary to generate the inventory draggable list
-  Object.values(mealsLibrary).forEach((meal) => {
-    // Only block Sunday dinner warning elements, allow breakfasts/evenings
+  // 3. COMBINE STATIC CONFIG MEALS WITH USER CREATED DATA MEALS
+  window.DATA.customMeals = window.DATA.customMeals || {};
+  const combinedMeals = { ...staticMeals, ...window.DATA.customMeals };
+
+  // 4. Loop through the unified dictionary to generate your draggable list elements
+  Object.values(combinedMeals).forEach((meal) => {
     if (meal.id === "sun_main" || meal.id === "external_evening") return;
 
     const itemPill = dom.create("inventory-meal-pill", listWrapper, {
       text: meal.name,
-      data: { id: meal.id, type: meal.type }
+      data: { id: meal.id, type: meal.type } // Correctly binds type parameters for drop targets
     });
 
     itemPill.addClass(`type-${meal.type.toLowerCase()}`);
   });
 
-  // 4. Activate jQuery-UI cloning engine
+  // 5. Activate jQuery-UI cloning engine
   $(targetSelector).find(".inventory-meal-pill").draggable({
     helper: "clone",
     opacity: 0.85,

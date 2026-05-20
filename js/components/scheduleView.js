@@ -1,134 +1,94 @@
 /**
- * js/components/scheduleView.js
- * Generates the 14-day grid layout displaying meals, embedded preps,
- * and handles smart isolation filtering to default to today's active menu.
+ * js/components/pillboxView.js
+ * Generates the master sidebar list of available heart-healthy meal pills.
+ * Handles persistent custom meal creation via window.DATA storage mirroring.
  * Exports exactly one function matching the filename.
  */
-import { shoppingListView } from "./shoppingListView.js";
+export function pillboxView() {
+  const targetSelector = "#meal-pillbox-view";
+  const staticMeals = window.APP_CONFIG.MEALS;
 
-export function scheduleView() {
-  const targetSelector = "#menu-schedule-view";
-  const scheduleTemplate = window.APP_CONFIG.SCHEDULE_TEMPLATE;
-  const mealsLibrary = window.APP_CONFIG.MEALS;
-  const warnings = window.APP_CONFIG.NUTRITION_WARNINGS;
-
+  // 1. Clear previous rendering and build framework
   $(targetSelector).empty();
-  const gridContainer = dom.create("schedule-grid", targetSelector);
-
-  // 1. CALCULATE TODAY'S SYSTEM INDEX FOR AUTO-ISOLATION
-  // Resolves standard system days (0 = Sunday, 1 = Monday, etc.)
-  const systemDate = new Date();
-  const currentDayOfWeekIndex = systemDate.getDay(); 
+  dom.create("pillbox-header", targetSelector, { tag: "h3", text: "🍉 Master Meal Inventory" });
   
-  // We assume Week 1 defaults unless tracking state specifies Week 2
-  const currentWeekOffset = window.DATA.currentWeek === 2 ? 7 : 0;
-  const targetTodayIndex = currentDayOfWeekIndex + currentWeekOffset;
+  // 2. Add Custom Meal Creation Input Fields
+  const formBox = dom.create("pillbox-add-form", targetSelector);
+  
+  const nameInput = dom.create("pillbox-input", formBox, {
+    tag: "input",
+    attr: { type: "text", placeholder: "New meal name (e.g., Baked Salmon)..." }
+  });
 
-  scheduleTemplate.forEach((day) => {
-    // 🚀 THE ISOLATOR FILTER: If true, hide all days except today's structural index
-    if (window.DATA.isIsolatedView) {
-      if (day.index !== targetTodayIndex) return;
-    }
+  const typeSelect = dom.create("pillbox-select", formBox, {
+    tag: "select"
+  });
+  dom.create("opt", typeSelect, { tag: "option", attr: { value: "Breakfast" }, text: "Breakfast" });
+  dom.create("opt", typeSelect, { tag: "option", attr: { value: "Main" }, text: "Noon Meal" });
+  dom.create("opt", typeSelect, { tag: "option", attr: { value: "Light" }, text: "Evening Meal" });
 
-    window.DATA.schedule = window.DATA.schedule || {};
-    
-    const activeBreakfastId = window.DATA.schedule[`day_${day.index}_breakfast`] || day.breakfast;
-    const activeMainId = window.DATA.schedule[`day_${day.index}_main`] || day.main;
-    const activeLightId = window.DATA.schedule[`day_${day.index}_light`] || day.light;
+  dom.create("pillbox-btn", formBox, {
+    tag: "button",
+    text: "Add to Inventory",
+    attr: { type: "button" },
+    on: {
+      click: function() {
+        const name = nameInput.val().trim();
+        const type = typeSelect.val();
+        if (name === "") return;
 
-    const breakfastMeal = mealsLibrary[activeBreakfastId];
-    const mainMeal = mealsLibrary[activeMainId];
-    const lightMeal = mealsLibrary[activeLightId];
+        const newId = "custom_" + Date.now();
 
-    const dayCard = dom.create("day-card", gridContainer, {
-      data: { index: day.index }
-    });
+        // STATE MIRRORING FIX: Initialize and save straight to window.DATA layer
+        window.DATA.customMeals = window.DATA.customMeals || {};
+        window.DATA.customMeals[newId] = {
+          id: newId,
+          name: name,
+          type: type,
+          ingredients: [name] // Self-populates ingredient pill array cleanly
+        };
 
-    // Highlight today's card with a special border style class if showing full layout
-    if (day.index === targetTodayIndex) {
-      dayCard.addClass("today-card-highlight");
-    }
-
-    dom.create("day-header", dayCard, { tag: "h3", text: day.dayLabel });
-    const mealsList = dom.create("day-meals-list", dayCard, { tag: "ul" });
-
-    const slotBreakfast = dom.create("meal-slot target-breakfast type-breakfast", mealsList, { 
-      tag: "li", 
-      html: `<strong>Breakfast:</strong> <span class="assigned-meal-text">${breakfastMeal.name}</span>`,
-      data: { index: day.index, slot: "breakfast" }
-    });
-
-    const slotMain = dom.create("meal-slot target-main type-main", mealsList, { 
-      tag: "li", 
-      html: `<strong>Noon Meal:</strong> <span class="assigned-meal-text">${mainMeal.name}</span>`,
-      data: { index: day.index, slot: "main" }
-    });
-
-    const slotLight = dom.create("meal-slot target-light type-light", mealsList, { 
-      tag: "li", 
-      html: `<strong>Evening Meal:</strong> <span class="assigned-meal-text">${lightMeal.name}</span>`,
-      data: { index: day.index, slot: "light" }
-    });
-
-    if (mainMeal.isExternal) slotMain.addClass("locked-slot");
-    if (lightMeal.isExternal) slotLight.addClass("locked-slot");
-
-    // Embedded Batch Prep Tasks
-    if (day.index === 1 || day.index === 8) {
-      const prepBox = dom.create("inline-prep-box", dayCard);
-      dom.create("prep-title", prepBox, { tag: "h4", text: "⚡ Monday Morning Batch Prep" });
-      const prepList = dom.create("prep-task-list", prepBox, { tag: "ul" });
-      dom.create("task-item", prepList, { tag: "li", text: "Use Instant Pot to make a master batch of Brown Rice." });
-      dom.create("task-item", prepList, { tag: "li", text: "Use Slow Cooker to cook the Red Lentils." });
-    }
-
-    if (day.index === 3 || day.index === 10) {
-      const prepBox = dom.create("inline-prep-box", dayCard);
-      dom.create("prep-title", prepBox, { tag: "h4", text: "⚡ Wednesday Batch Prep" });
-      const prepList = dom.create("prep-task-list", prepBox, { tag: "ul" });
-      dom.create("task-item", prepList, { tag: "li", text: "Cook French Green Lentils (will last through Saturday)." });
-      dom.create("task-item", prepList, { tag: "li", text: "Boil a batch of skin-on Potatoes." });
-    }
-
-    // Sunday Heart-Safety Warnings
-    if (mainMeal.hasWarning) {
-      const warningBox = dom.create("heart-warning-box", dayCard);
-      dom.create("warning-title", warningBox, { tag: "h4", text: "Sunday Dining Cheat-Sheet" });
-      
-      const dangerList = dom.create("warning-list danger", warningBox, { tag: "ul" });
-      dom.create("list-label", dangerList, { tag: "li", html: `<strong>${warnings.dangerous.label}</strong>` });
-      warnings.dangerous.items.forEach(item => dom.create("item", dangerList, { tag: "li", text: item }));
-
-      const cautionList = dom.create("warning-list caution", warningBox, { tag: "ul" });
-      dom.create("list-label", cautionList, { tag: "li", html: `<strong>${warnings.caution.label}</strong>` });
-      warnings.caution.items.forEach(item => dom.create("item", cautionList, { tag: "li", text: item }));
-
-      const safeList = dom.create("warning-list safe", warningBox, { tag: "ul" });
-      dom.create("list-label", safeList, { tag: "li", html: `<strong>${warnings.safe.label}</strong>` });
-      warnings.safe.items.forEach(item => dom.create("item", safeList, { tag: "li", text: item }));
+        console.log(`Custom item permanently registered to memory store: "${name}" (${type})`);
+        
+        // Clear text field and instantly refresh the inventory view column
+        nameInput.val("");
+        pillboxView();
+      }
     }
   });
 
-  // jQuery-UI Drop Handler
-  $(targetSelector).find(".meal-slot:not(.locked-slot)").droppable({
-    accept: function(draggable) {
-      const slotType = $(this).data("slot");
-      const dragType = draggable.data("type") ? draggable.data("type").toLowerCase() : "";
-      return slotType === dragType;
-    },
-    hoverClass: "slot-hover-active",
-    drop: function(event, ui) {
-      const dayIndex = $(this).data("index");
-      const slotName = $(this).data("slot");
-      const droppedMealId = ui.draggable.data("id");
+  dom.create("pillbox-instruction", targetSelector, { 
+    tag: "p", 
+    text: "Drag a meal pill and drop it onto a matching calendar slot.", 
+    style: "font-size:12px; color:#64748b; margin: 15px 0 10px 0;" 
+  });
 
-      window.DATA.schedule = window.DATA.schedule || {};
-      window.DATA.schedule[`day_${dayIndex}_${slotName}`] = droppedMealId;
+  const listWrapper = dom.create("pillbox-items-container", targetSelector);
 
-      window.DATA.shoppingList = [];
+  // 3. COMBINE STATIC CONFIG MEALS WITH USER CREATED DATA MEALS
+  window.DATA.customMeals = window.DATA.customMeals || {};
+  const combinedMeals = { ...staticMeals, ...window.DATA.customMeals };
 
-      scheduleView();
-      shoppingListView();
+  // 4. Loop through the unified dictionary to generate your draggable list elements
+  Object.values(combinedMeals).forEach((meal) => {
+    if (meal.id === "sun_main" || meal.id === "external_evening") return;
+
+    const itemPill = dom.create("inventory-meal-pill", listWrapper, {
+      text: meal.name,
+      data: { id: meal.id, type: meal.type } // Correctly binds type parameters for drop targets
+    });
+
+    itemPill.addClass(`type-${meal.type.toLowerCase()}`);
+  });
+
+  // 5. Activate jQuery-UI cloning engine
+  $(targetSelector).find(".inventory-meal-pill").draggable({
+    helper: "clone",
+    opacity: 0.85,
+    cursor: "move",
+    revert: "invalid",
+    start: function() {
+      $(this).css("z-index", 1000);
     }
   });
 }

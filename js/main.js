@@ -81,22 +81,37 @@ function setupEventListeners() {
 
 /**
  * 5. START PROJECT UI
- * Clean, untainted execution entry point for your application logic
+ * Clean execution entry point for your application logic.
+ * Updated to hydate layout states directly from meal_state.json!
  */
 function startProjectUI() {
-    // 1. Deploy layout framework shell columns
+    // 1. Deploy base interface framework shell columns
     appFrame();
 
-    viewToggle(); // <--- Injects your view mode controller layout button
-    
-    // 2. Deploy draggable inventory sidebar matching static configs
-    pillboxView();
-    
-    // 3. Deploy schedule calendar cards
-    scheduleView();
-    
-    // 4. Compile initial shopping list pills
-    shoppingListView();
-    
-    console.log("Phase 2 UI Architecture initialized successfully.");
+    // 2. FETCH AND HYDRATE PHASES FROM DISK BEFORE DRAWING CARDS
+    fetch('data/meal_state.json')
+        .then(response => {
+            if (!response.ok) throw new Error("No custom saved plans found on disk yet.");
+            return response.json();
+        })
+        .then(savedData => {
+            // Found a saved database file! Hydrate window.DATA state instantly
+            window.DATA = savedData;
+            console.log("💾 Active state successfully hydrated from data/meal_state.json");
+        })
+        .catch(err => {
+            // Fallback safety layer: Use default empty states if file isn't created yet
+            console.warn(err.message);
+            window.DATA.schedule = {};
+            window.DATA.shoppingList = [];
+        })
+        .finally(() => {
+            // 3. Draw UI layout panels using the freshly loaded state metrics
+            viewToggle(); 
+            pillboxView();
+            scheduleView();
+            shoppingListView();
+            
+            console.log("Meal app framework components fully deployed.");
+        });
 }

@@ -1,7 +1,7 @@
 /**
  * js/components/scheduleView.js
  * Generates the 14-day grid layout displaying meals, embedded preps,
- * and configures color-matched interactive jQuery-UI droppable target zones.
+ * and handles smart isolation filtering to default to today's active menu.
  * Exports exactly one function matching the filename.
  */
 import { shoppingListView } from "./shoppingListView.js";
@@ -15,7 +15,21 @@ export function scheduleView() {
   $(targetSelector).empty();
   const gridContainer = dom.create("schedule-grid", targetSelector);
 
+  // 1. CALCULATE TODAY'S SYSTEM INDEX FOR AUTO-ISOLATION
+  // Resolves standard system days (0 = Sunday, 1 = Monday, etc.)
+  const systemDate = new Date();
+  const currentDayOfWeekIndex = systemDate.getDay(); 
+  
+  // We assume Week 1 defaults unless tracking state specifies Week 2
+  const currentWeekOffset = window.DATA.currentWeek === 2 ? 7 : 0;
+  const targetTodayIndex = currentDayOfWeekIndex + currentWeekOffset;
+
   scheduleTemplate.forEach((day) => {
+    // 🚀 THE ISOLATOR FILTER: If true, hide all days except today's structural index
+    if (window.DATA.isIsolatedView) {
+      if (day.index !== targetTodayIndex) return;
+    }
+
     window.DATA.schedule = window.DATA.schedule || {};
     
     const activeBreakfastId = window.DATA.schedule[`day_${day.index}_breakfast`] || day.breakfast;
@@ -30,10 +44,14 @@ export function scheduleView() {
       data: { index: day.index }
     });
 
+    // Highlight today's card with a special border style class if showing full layout
+    if (day.index === targetTodayIndex) {
+      dayCard.addClass("today-card-highlight");
+    }
+
     dom.create("day-header", dayCard, { tag: "h3", text: day.dayLabel });
     const mealsList = dom.create("day-meals-list", dayCard, { tag: "ul" });
 
-    // 1. Build slots with matching background modifier types
     const slotBreakfast = dom.create("meal-slot target-breakfast type-breakfast", mealsList, { 
       tag: "li", 
       html: `<strong>Breakfast:</strong> <span class="assigned-meal-text">${breakfastMeal.name}</span>`,
@@ -52,11 +70,10 @@ export function scheduleView() {
       data: { index: day.index, slot: "light" }
     });
 
-    // 2. Unlocked Sunday Breakfast! Only lock external dinners/evenings provided by family
     if (mainMeal.isExternal) slotMain.addClass("locked-slot");
     if (lightMeal.isExternal) slotLight.addClass("locked-slot");
 
-    // 3. Embedded Batch Prep Tasks
+    // Embedded Batch Prep Tasks
     if (day.index === 1 || day.index === 8) {
       const prepBox = dom.create("inline-prep-box", dayCard);
       dom.create("prep-title", prepBox, { tag: "h4", text: "⚡ Monday Morning Batch Prep" });
@@ -73,7 +90,7 @@ export function scheduleView() {
       dom.create("task-item", prepList, { tag: "li", text: "Boil a batch of skin-on Potatoes." });
     }
 
-    // 4. Sunday Heart-Safety Warnings
+    // Sunday Heart-Safety Warnings
     if (mainMeal.hasWarning) {
       const warningBox = dom.create("heart-warning-box", dayCard);
       dom.create("warning-title", warningBox, { tag: "h4", text: "Sunday Dining Cheat-Sheet" });
@@ -92,7 +109,7 @@ export function scheduleView() {
     }
   });
 
-  // 5. jQuery-UI Drop Handler
+  // jQuery-UI Drop Handler
   $(targetSelector).find(".meal-slot:not(.locked-slot)").droppable({
     accept: function(draggable) {
       const slotType = $(this).data("slot");

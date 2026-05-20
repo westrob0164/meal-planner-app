@@ -1,7 +1,7 @@
 /**
  * js/components/pillboxView.js
  * Generates the master sidebar list of available heart-healthy meal pills.
- * Handles persistent custom meal creation via window.DATA storage mirroring.
+ * Handles persistent custom meal creation and forces type-sorted organization.
  * Exports exactly one function matching the filename.
  */
 export function pillboxView() {
@@ -39,18 +39,16 @@ export function pillboxView() {
 
         const newId = "custom_" + Date.now();
 
-        // 🚀 STATE MIRRORING FIX: Initialize and save straight to window.DATA layer
         window.DATA.customMeals = window.DATA.customMeals || {};
         window.DATA.customMeals[newId] = {
           id: newId,
           name: name,
           type: type,
-          ingredients: [name] // Self-populates ingredient pill array cleanly
+          ingredients: [name]
         };
 
         console.log(`Custom item permanently registered to memory store: "${name}" (${type})`);
         
-        // Clear text field and instantly refresh the inventory view column
         nameInput.val("");
         pillboxView();
       }
@@ -69,19 +67,29 @@ export function pillboxView() {
   window.DATA.customMeals = window.DATA.customMeals || {};
   const combinedMeals = { ...staticMeals, ...window.DATA.customMeals };
 
-  // 4. Loop through the unified dictionary to generate your draggable list elements
-  Object.values(combinedMeals).forEach((meal) => {
+  // 4. 🚀 TYPE-SORTING ENGINE PIPELINE
+  // Sorts arrays so elements organize by category group instead of insertion order
+  const typeOrder = { "breakfast": 1, "main": 2, "light": 3 };
+  
+  const sortedMealsArray = Object.values(combinedMeals).sort((mealA, mealB) => {
+    const orderA = typeOrder[mealA.type.toLowerCase()] || 99;
+    const orderB = typeOrder[mealB.type.toLowerCase()] || 99;
+    return orderA - orderB;
+  });
+
+  // 5. Loop through the newly SORTED array to generate your draggable list elements
+  sortedMealsArray.forEach((meal) => {
     if (meal.id === "sun_main" || meal.id === "external_evening") return;
 
     const itemPill = dom.create("inventory-meal-pill", listWrapper, {
       text: meal.name,
-      data: { id: meal.id, type: meal.type } // Correctly binds type parameters for drop targets
+      data: { id: meal.id, type: meal.type }
     });
 
     itemPill.addClass(`type-${meal.type.toLowerCase()}`);
   });
 
-  // 5. Activate jQuery-UI cloning engine
+  // 6. Activate jQuery-UI cloning engine
   $(targetSelector).find(".inventory-meal-pill").draggable({
     helper: "clone",
     opacity: 0.85,

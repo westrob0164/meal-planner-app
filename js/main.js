@@ -8,6 +8,7 @@
 import { appFrame } from "./components/appFrame.js";
 import { scheduleView } from "./components/scheduleView.js";
 import { shoppingListView } from "./components/shoppingListView.js"; // <--- Add this import
+import { pillboxView } from "./components/pillboxView.js";
 
 
 
@@ -82,16 +83,17 @@ function setupEventListeners() {
  * Clean, untainted execution entry point for your application logic
  */
 function startProjectUI() {
-    // Execute base interface skeleton deployment
+    // 1. Deploy layout framework shell columns
     appFrame();
     
-    // Execute 14-day layout template card construction matrix
-    scheduleView();
-
-    // Compile and build interactive phone-friendly grocery item rows
-    shoppingListView();
-
-
+    // 2. Deploy draggable inventory sidebar matching static configs
+    pillboxView();
     
-    console.log("Meal app framework and schedule matrix deployed successfully.");
+    // 3. Deploy schedule calendar cards
+    scheduleView();
+    
+    // 4. Compile initial shopping list pills
+    shoppingListView();
+    
+    console.log("Phase 2 UI Architecture initialized successfully.");
 }
